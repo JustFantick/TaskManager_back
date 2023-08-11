@@ -1,8 +1,9 @@
 import express from 'express';
 import mysql from 'mysql2';
+import cors from 'cors';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 
 var connection = mysql.createPool({
 	host: 'localhost',
@@ -14,17 +15,19 @@ var connection = mysql.createPool({
 	queueLimit: 0
 });
 
+app.use(cors());
 app.use(express.static('public'));
 
 //Authorize
-app.get(
-	'/authorizeTry',
+app.post(
+	'/authorize',
 	async (req, res) => {
 		const enteredLogin = req.query.login;
 		const enteredPassword = req.query.password;
 
 		try {
 			const promise = connection.promise();
+
 			const result = await promise.execute(
 				`SELECT user_id, login, password FROM users WHERE users.login = '${enteredLogin}';`
 			);
@@ -34,7 +37,10 @@ app.get(
 			} else if (result[0][0].password !== enteredPassword) {
 				res.send({ status: 0, errorType: "invalid password" });
 			} else {
-				res.send({ status: 1, userId: result[0][0].user_id, userLogin: result[0][0].login });
+				res.send({
+					status: 1,
+					response: { userId: result[0][0].user_id, userLogin: result[0][0].login }
+				});
 			}
 		} catch (err) {
 			res.send({ status: 0, errorType: err });
@@ -76,9 +82,10 @@ app.get(
 
 //registerNewUser
 app.post(
-	'/registerNewUser',
+	'/register',
 	async (req, res) => {
 		const enteredLogin = req.query.login;
+		const enteredEmail = req.query.email;
 		const enteredPassword = req.query.password;
 
 		try {
@@ -89,17 +96,22 @@ app.post(
 			);
 
 			if (result[0].length !== 0) {
-				res.send({ status: 0, errorType: "user already exist" });
+				res.send({ status: 0, errorType: "user already exist", result: result[0] });
 			} else {
 				await promise.execute(
-					`INSERT INTO users (login, password) VALUES ('${enteredLogin}', '${enteredPassword}');`
+					`INSERT INTO users (login, password, email) VALUES 
+					('${enteredLogin}', '${enteredPassword}', '${enteredEmail}');`
 				);
 				const createdUsersId = await promise.execute(
 					`SELECT user_id, login FROM users WHERE users.login = '${enteredLogin}'`
 				);
-				res.send({ status: 1, userId: createdUsersId[0][0].user_id, userLogin: enteredLogin });
+				res.send({
+					status: 1,
+					response: { userId: createdUsersId[0][0].user_id, userLogin: enteredLogin }
+				});
 			}
 		} catch (err) {
+			res.send({ status: 0, errorType: err });
 			console.log('Error! \n' + err);
 		}
 	}
