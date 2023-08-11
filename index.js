@@ -1,6 +1,7 @@
 import express from 'express';
 import mysql from 'mysql2';
 import cors from 'cors';
+import { sendPasswordOnEmail } from './email.js';
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -46,6 +47,30 @@ app.post(
 			res.send({ status: 0, errorType: err });
 			console.log('Error! \n' + err);
 		}
+	}
+);
+
+app.post(
+	'/forgotPassword',
+	async (req, res) => {
+		const enteredLogin = req.query.login;
+
+		try {
+			const promise = connection.promise();
+			const result = await promise.execute(
+				`SELECT password, email FROM users WHERE users.login = '${enteredLogin}';`
+			);
+
+			if (result[0].length !== 0) {
+				res.send({ status: 1 });
+				sendPasswordOnEmail(result[0][0].email, result[0][0].password);
+			} else {
+				res.send({ status: 0, errorType: "user not found" });
+			}
+
+		} catch (err) {
+			res.send({ status: 0, errorType: err });
+		};
 	}
 );
 
