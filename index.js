@@ -90,7 +90,7 @@ app.get(
 			async function getResTasks(initTasksArray) {
 				for (let i = 0; i < initTasksArray.length; i++) {
 					const stepsForTask = await promise.execute(
-						`SELECT title, status  FROM steps WHERE steps.task_id = ${initTasksArray[i].task_id};`
+						`SELECT title, status FROM steps WHERE steps.task_id = ${initTasksArray[i].task_id};`
 					);
 					initTasksArray[i].steps = await stepsForTask[0];
 				}
@@ -100,6 +100,7 @@ app.get(
 			res.send(await getResTasks(tasks[0]));
 
 		} catch (err) {
+			res.send({ status: 0, errorType: err });
 			console.log('Error! \n' + err);
 		}
 	}
