@@ -7,10 +7,10 @@ const app = express();
 const PORT = process.env.PORT || 3002;
 
 var connection = mysql.createPool({
-	host: 'localhost',
-	user: 'root',
-	password: '0000',
-	database: 'todo_task_manager',
+	host: process.env.DB_HOST,
+	user: process.env.DB_USERNAME,
+	password: process.env.DB_PASSWORD,
+	database: process.env.DB_DBNAME,
 	waitForConnections: true,
 	connectionLimit: 10,
 	queueLimit: 0
